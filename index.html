@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>Member Portal</title>
+<style>
+:root{--ink:#12263a;--mute:#5b6b73;--teal:#0f766e;--bg:#eef2f1;--card:#fff;--line:#d5dfdc;--red:#b3392f;--green:#15803d;--soft:#f3f7f6}
+@media (prefers-color-scheme:dark){:root{--ink:#e6eef2;--mute:#9db0ba;--teal:#2bb3a6;--bg:#0f1a20;--card:#16252d;--line:#2a3d47;--red:#ff8a80;--green:#6ee7a0;--soft:#1b2d36}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI","Noto Sans Ethiopic",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.org{font-weight:700;font-size:15px;line-height:1.25}
+.lang{white-space:nowrap}.lang button,.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.lang button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+input{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.go{width:100%;margin-top:16px;background:var(--teal);color:#fff;border:0;border-radius:10px;padding:13px;font:inherit;font-weight:600;font-size:17px;cursor:pointer}
+.go:disabled{opacity:.6}
+.err{color:var(--red);min-height:22px;margin-top:10px;font-size:14px}
+.note{color:var(--mute);font-size:13px}
+.kp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k{background:var(--soft);border-radius:12px;padding:12px}.k span{display:block;font-size:12px;color:var(--mute)}.k b{font-size:19px;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}.row:last-child{border:0}
+.row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+details{margin-top:10px}summary{cursor:pointer;color:var(--teal);font-weight:600;font-size:14px}
+.tw{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-size:12px;color:var(--mute);position:sticky;top:0;background:var(--card)}
+td.l,th.l{text-align:left;white-space:normal;min-width:110px}
+.pill{display:inline-block;font-size:12px;border-radius:20px;padding:2px 9px;background:var(--soft);color:var(--mute)}
+.bad{color:var(--red)}.ok{color:var(--green)}
+.hide{display:none}
+@media print{.noprint{display:none!important}body{background:#fff;color:#000}.card{border:1px solid #999;break-inside:avoid}details{display:block}details>*{display:block}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top noprint"><div class="org" id="org"></div><div class="lang"><button id="l_am" onclick="setL('am')">አማ</button> <button id="l_en" onclick="setL('en')">EN</button></div></div>
+  <div id="login" class="card">
+    <h1 id="t_login"></h1><p class="note" id="t_login_n"></p>
+    <label id="t_acc"></label><input id="acc" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text">
+    <label id="t_pin"></label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="err"></div>
+    <button class="go" id="gob" onclick="doLogin()"></button>
+  </div>
+  <div id="view" class="hide"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+<script>
+var SB_URL="https://kulfrqucsvpdierklxmu.supabase.co",SB_KEY="sb_publishable_5q5IZJNSzM2bcro7xr_vQA_KBoUgoUz";
+var L="am",DATA=null,UPD=null,idle=null,sb=null;
+var T={
+ am:{org:"የደሴ አምባ የህ/ስ/ማ የገ/ቁ/ብ/ዩኒዬን",login:"የአባላት መግቢያ",loginN:"የሂሳብ ቁጥርዎንና ከማህበሩ የተሰጠዎትን PIN ያስገቡ።",acc:"የሂሳብ ቁጥር",pin:"PIN",go:"ግባ",wait:"⏳ በመግባት ላይ…",
+  invalid:"የሂሳብ ቁጥር ወይም PIN ትክክል አይደለም።",locked:"ብዙ ጊዜ ተሳስተዋል። ከ30 ደቂቃ በኋላ ይሞክሩ ወይም ወደ ማህበሩ ቢሮ ይጠይቁ።",net:"ግንኙነት አልተሳካም — ኢንተርኔት ያረጋግጡ።",nodata:"ዳታዎ ገና አልታተመም — ወደ ቢሮ ይጠይቁ።",empty:"ሁለቱንም ያስገቡ።",
+  hi:"ሰላም",asof:"እስከ",upd:"የተዘመነው",ec:"(ኢ.ዘ.አ)",sum:"አጠቃላይ",sav:"ጠቅላላ ቁጠባና ዕጣ",lnb:"የብድር ቀሪ",ir:"ተሰብሳቢ ወለድ",pen:"ቅጣት",
+  savT:"ቁጠባና ዕጣ",lnT:"ብድሮች",bal:"ቀሪ",stmt:"መግለጫ ይመልከቱ",sched:"የክፍያ መርሐ ግብር",hist:"የብድር እንቅስቃሴ",
+  date:"ቀን",desc:"ዝርዝር",inn:"ገቢ",out:"ወጪ",balc:"ቀሪ",no:"ቁ.",pr:"ዋና ክፍያ",it:"ወለድ",pn:"ቅጣት",dis:"የተሰጠ",st:"ሁኔታ",paid:"✓ ተከፍሏል",late:"ዘግይቷል",due:"ይጠበቃል",
+  loan:"ብድር",given:"የተሰጠበት",amt:"የብድር መጠን",rate:"ዓመታዊ ወለድ",mat:"የሚያበቃበት",next:"ቀጣይ ክፍያ",nextD:"በ",out2:"ውጣ",print:"🖨 አትም",
+  more:"ከዚህ በፊት ያሉ {n} ግብይቶች አይታዩም — ሙሉ መግለጫ ለማግኘት ቢሮ ይጠይቁ።",none:"ግብይት የለም",noSav:"ምንም ቁጠባ የለም",noLn:"ምንም ንቁ ብድር የለም",interest:"ወለድ",
+  foot:"ይህ መረጃ ለማመልከቻ ብቻ ነው። ልዩነት ካለ የማህበሩ መዝገብ ይወሰናል።",idle:"ለደህንነት ሲባል ከ5 ደቂቃ በኋላ ወጥተዋል።",
+  k:{sh:"ዕጣ",s1:"መደበኛ ቁጠባ",s2:"ዝግ ቁጠባ",s3:"የግዜ ገደብ",s4:"መ/ያልሆነ ቁጠባ",l1:"የአጭር ጊዜ ብድር",l2:"የመካከለኛ ጊዜ ብድር",l3:"የረጅም ጊዜ ብድር"}},
+ en:{org:"Dessie Amba Saving & Credit Cooperative Union",login:"Member Login",loginN:"Enter your account number and the PIN given to you by the union.",acc:"Account number",pin:"PIN",go:"Sign in",wait:"⏳ Signing in…",
+  invalid:"Account number or PIN is incorrect.",locked:"Too many wrong attempts. Try again after 30 minutes or ask the union office.",net:"Connection failed — check your internet.",nodata:"Your data has not been published yet — please ask the office.",empty:"Please enter both.",
+  hi:"Hello",asof:"As of",upd:"Updated",ec:"(E.C.)",sum:"Summary",sav:"Total savings & share",lnb:"Loan balance",ir:"Interest receivable",pen:"Penalty",
+  savT:"Savings & share",lnT:"Loans",bal:"Balance",stmt:"View statement",sched:"Repayment schedule",hist:"Loan activity",
+  date:"Date",desc:"Description",inn:"In",out:"Out",balc:"Balance",no:"#",pr:"Principal",it:"Interest",pn:"Penalty",dis:"Disbursed",st:"Status",paid:"✓ Paid",late:"Late",due:"Due",
+  loan:"Loan",given:"Issued",amt:"Loan amount",rate:"Annual interest",mat:"Maturity",next:"Next payment",nextD:"on",out2:"Sign out",print:"🖨 Print",
+  more:"{n} earlier transactions are not shown — ask the office for the full statement.",none:"No transactions",noSav:"No savings",noLn:"No active loans",interest:"Interest",
+  foot:"This is for information only. In case of any difference the union's records prevail.",idle:"Signed out after 5 minutes for your security.",
+  k:{sh:"Share",s1:"Regular saving",s2:"Closed saving",s3:"Time deposit",s4:"Voluntary saving",l1:"Short-term loan",l2:"Medium-term loan",l3:"Long-term loan"}}
+};
+function t(k){return T[L][k]}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function f(n){n=+n||0;return Math.abs(n)<0.005?"-":n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function kn(k,fb){return T[L].k[k]||fb||k}
+function setL(l){L=l;try{localStorage.setItem("mp_lang",l)}catch(e){}paint();if(DATA)render()}
+function paint(){
+  document.documentElement.lang=L;
+  document.getElementById("org").textContent=t("org");document.getElementById("t_login").textContent=t("login");document.getElementById("t_login_n").textContent=t("loginN");
+  document.getElementById("t_acc").textContent=t("acc");document.getElementById("t_pin").textContent=t("pin");document.getElementById("gob").textContent=t("go");
+  document.getElementById("l_am").className=L=="am"?"on":"";document.getElementById("l_en").className=L=="en"?"on":"";document.title=t("login")}
+function doLogin(){
+  var a=document.getElementById("acc").value.trim(),p=document.getElementById("pin").value.trim(),e=document.getElementById("err"),b=document.getElementById("gob");
+  e.textContent="";if(!a||!p){e.textContent=t("empty");return}
+  if(!sb){if(typeof supabase==="undefined"){e.textContent=t("net");return}sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false}})}
+  b.disabled=true;b.textContent=t("wait");
+  sb.rpc("member_login",{p_acc:a,p_pin:p}).then(function(r){
+    b.disabled=false;b.textContent=t("go");
+    if(r.error||!r.data){e.textContent=t("net");return}
+    var d=r.data;if(!d.ok){e.textContent=d.err=="locked"?t("locked"):t("invalid");document.getElementById("pin").value="";return}
+    if(!d.data){e.textContent=t("nodata");return}
+    DATA=d.data;UPD=d.updated;document.getElementById("pin").value="";document.getElementById("acc").value="";
+    document.getElementById("login").className="card hide";document.getElementById("view").className="";render();arm();window.scrollTo(0,0)
+  }).catch(function(){b.disabled=false;b.textContent=t("go");e.textContent=t("net")})}
+function arm(){clearTimeout(idle);idle=setTimeout(function(){logout(t("idle"))},5*60*1000)}
+["click","keydown","touchstart","scroll"].forEach(function(ev){document.addEventListener(ev,function(){if(DATA)arm()},{passive:true})});
+function logout(msg){DATA=null;UPD=null;clearTimeout(idle);document.getElementById("view").className="hide";document.getElementById("view").innerHTML="";document.getElementById("login").className="card";document.getElementById("err").textContent=msg||""}
+function stTable(rows,more){
+  if(!rows||!rows.length)return'<p class="note">'+t("none")+'</p>';
+  return'<div class="tw"><table><thead><tr><th class="l">'+t("date")+'</th><th class="l">'+t("desc")+'</th><th>'+t("inn")+'</th><th>'+t("out")+'</th><th>'+t("balc")+'</th></tr></thead><tbody>'+rows.map(function(x){return'<tr><td class="l">'+esc(x.d)+'</td><td class="l">'+esc(x.t)+(x.i?' <span class="pill">'+t("interest")+'</span>':"")+'</td><td>'+f(x["in"])+'</td><td>'+f(x.out)+'</td><td><b>'+f(x.b)+'</b></td></tr>'}).join("")+'</tbody></table></div>'+(more>0?'<p class="note">'+t("more").replace("{n}",more)+'</p>':"")}
+function lnTable(rows,more){
+  if(!rows||!rows.length)return'<p class="note">'+t("none")+'</p>';
+  return'<div class="tw"><table><thead><tr><th class="l">'+t("date")+'</th><th class="l">'+t("desc")+'</th><th>'+t("dis")+'</th><th>'+t("pr")+'</th><th>'+t("it")+'</th><th>'+t("pn")+'</th><th>'+t("balc")+'</th></tr></thead><tbody>'+rows.map(function(x){return'<tr><td class="l">'+esc(x.d)+'</td><td class="l">'+esc(x.t)+'</td><td>'+f(x.dis)+'</td><td>'+f(x.pr)+'</td><td>'+f(x.it)+'</td><td>'+f(x.pn)+'</td><td><b>'+f(x.b)+'</b></td></tr>'}).join("")+'</tbody></table></div>'+(more>0?'<p class="note">'+t("more").replace("{n}",more)+'</p>':"")}
+function render(){
+  var d=DATA,sv=d.sv||[],ln=d.ln||[],ts=0,tl=0,ti=0,tp=0;
+  sv.forEach(function(a){ts+=a.bal});ln.forEach(function(a){tl+=a.bal;ti+=a.ir;tp+=a.pen});
+  var h='<div class="card"><div class="top" style="margin:0"><div><h1>'+t("hi")+', '+esc(d.name)+'</h1><div class="note">'+t("acc")+': <b>'+esc(d.acc)+'</b></div><div class="note">'+t("asof")+' '+esc(d.asof)+' '+t("ec")+(UPD?' · '+t("upd")+': '+esc(new Date(UPD).toLocaleDateString("en-GB")):"")+'</div></div></div></div>';
+  h+='<div class="card"><h2>'+t("sum")+'</h2><div class="kp"><div class="k"><span>'+t("sav")+'</span><b>'+f(ts)+'</b></div><div class="k"><span>'+t("lnb")+'</span><b'+(tl>0?' class="bad"':"")+'>'+f(tl)+'</b></div><div class="k"><span>'+t("ir")+'</span><b>'+f(ti)+'</b></div><div class="k"><span>'+t("pen")+'</span><b>'+f(tp)+'</b></div></div></div>';
+  h+='<div class="card"><h2>'+t("savT")+'</h2>'+(sv.length?sv.map(function(a){return'<div class="row"><span>'+esc(kn(a.k,a.n))+'</span><b>'+f(a.bal)+'</b></div><details><summary>'+t("stmt")+'</summary>'+stTable(a.tx,a.more)+'</details>'}).join(""):'<p class="note">'+t("noSav")+'</p>')+'</div>';
+  h+='<div class="card"><h2>'+t("lnT")+'</h2>'+(ln.length?ln.map(function(a,ix){
+    var nx=a.next?'<div class="row"><span>'+t("next")+'</span><b>'+f(a.next.pr+a.next.it)+' '+t("nextD")+' '+esc(a.next.d)+'</b></div>':"";
+    return'<div style="'+(ix?"margin-top:16px;padding-top:12px;border-top:2px solid var(--line)":"")+'"><b>'+esc(kn(a.k,a.n))+' · '+t("loan")+' '+esc(a.no)+'</b>'+
+      '<div class="row"><span>'+t("bal")+'</span><b>'+f(a.bal)+'</b></div>'+(a.amt?'<div class="row"><span>'+t("amt")+'</span><b>'+f(a.amt)+'</b></div>':"")+(a.od?'<div class="row"><span>'+t("given")+'</span><b>'+esc(a.od)+'</b></div>':"")+
+      '<div class="row"><span>'+t("rate")+'</span><b>'+esc(a.rate)+'%</b></div><div class="row"><span>'+t("ir")+'</span><b>'+f(a.ir)+'</b></div><div class="row"><span>'+t("pen")+'</span><b>'+f(a.pen)+'</b></div>'+(a.mat?'<div class="row"><span>'+t("mat")+'</span><b>'+esc(a.mat)+'</b></div>':"")+nx+
+      (a.sched&&a.sched.length?'<details><summary>'+t("sched")+'</summary><div class="tw"><table><thead><tr><th>'+t("no")+'</th><th class="l">'+t("date")+'</th><th>'+t("pr")+'</th><th>'+t("it")+'</th><th>'+t("st")+'</th></tr></thead><tbody>'+a.sched.map(function(x){return'<tr><td>'+x.i+'</td><td class="l">'+esc(x.d)+'</td><td>'+f(x.pr)+'</td><td>'+f(x.it)+'</td><td>'+(x.paid?'<span class="ok">'+t("paid")+'</span>':(x.late>0?'<span class="bad">'+t("late")+' ('+x.late+')</span>':t("due")))+'</td></tr>'}).join("")+'</tbody></table></div></details>':"")+
+      '<details><summary>'+t("hist")+'</summary>'+lnTable(a.tx,a.more)+'</details></div>'}).join(""):'<p class="note">'+t("noLn")+'</p>')+'</div>';
+  h+='<div class="note" style="margin:10px 4px">'+t("foot")+'</div><div class="row noprint" style="border:0"><button class="btn" onclick="window.print()">'+t("print")+'</button><button class="btn" onclick="logout()">'+t("out2")+'</button></div>';
+  document.getElementById("view").innerHTML=h}
+try{var sl=localStorage.getItem("mp_lang");if(sl==="en"||sl==="am")L=sl}catch(e){}
+paint();
+</script>
+</body>
+</html>
